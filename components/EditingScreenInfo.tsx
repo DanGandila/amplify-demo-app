@@ -5,7 +5,8 @@ import { StyleSheet, TextInput, Button } from 'react-native';
 import API, { graphqlOperation } from '@aws-amplify/api'
 
 import Storage from '@aws-amplify/storage';
-import { ImagePicker, Permissions } from 'expo';
+// import { ImagePicker, Permissions } from 'expo';
+import ImagePicker from 'expo-image-picker';
 import mime from 'mime-types';
 
 import { Text, View } from './Themed';
