@@ -16,20 +16,6 @@ export default function EditScreenInfo({ path }: { path: string }) {
             darkColor="rgba(255,255,255,0.8)">
           This is an app created by Dan Gandila, to showcase a simple demo using two tabs! Enjoy!
         </Text>
-
-        <Text
-          style={styles.getStartedText}
-          lightColor="rgba(0,0,0,0.8)"
-          darkColor="rgba(255,255,255,0.8)">
-          Open up the code for this screen:
-        </Text>
-
-        <View
-          style={[styles.codeHighlightContainer, styles.homeScreenFilename]}
-          darkColor="rgba(255,255,255,0.05)"
-          lightColor="rgba(0,0,0,0.05)">
-          <MonoText>{path}</MonoText>
-        </View>
       </View>
 
       <View style={styles.helpContainer}>
