@@ -1,155 +1,87 @@
-import * as WebBrowser from 'expo-web-browser';
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, TextInput, Button } from 'react-native';
-
-import API, { graphqlOperation } from '@aws-amplify/api'
+import { StyleSheet, Button, Platform, Image, View } from 'react-native';
 
 import Storage from '@aws-amplify/storage';
-// import { ImagePicker, Permissions } from 'expo';
-import ImagePicker from 'expo-image-picker';
+import * as ImagePicker from 'expo-image-picker';
 import mime from 'mime-types';
 
-import { Text, View } from './Themed';
-
-const listPets = `
-    query {
-      listPet {
-        items {
-          id
-          name
-          description
-        }
-      }
-    }
-  `
-const createPet = `
-    mutation($name: String!, $description: String) {
-      createPet(input: {
-        name: $name
-        description: $description
-    }) {
-      id
-      name
-      description
-    }
-  }`
-
 export default function EditingScreenInfo({ path }: { path: string }) {
-  const [pets, setPets] = useState<any[]>([]);
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
+  const [pics, setPics] = useState<any[]>([]);
 
   useEffect(() => {
-    async function initPets() {
-      try {
-        const graphqldata: any = await API.graphql(graphqlOperation(listPets));
-        console.log('graphqldata:', graphqldata);
-        setPets(graphqldata.data.listPet.items);
-      } catch (err) {
-        console.log('error: ', err)
+    (async () => {
+      if (Platform.OS !== 'web') {
+        const { status } = await ImagePicker.requestCameraRollPermissionsAsync();
+        if (status !== 'granted') {
+          alert('Sorry, we need camera roll permissions to make this work!');
+        }
       }
-    }
-    initPets();
+    })();
+
+
+    (async () => {
+      const filesInfo = await Storage.list('')
+      const files = await Promise.all(
+          filesInfo.map(async (info: any) => {
+             return Storage.get(info.key);
+          })
+      );
+      setPics( files )
+    })();
   }, []);
 
   // event handler to pull up camera roll
-  const _pickImage = async () => {
-    // const {
-    //   status: cameraRollPerm
-    // } = await Permissions.askAsync(Permissions.CAMERA_ROLL);
-    // if (cameraRollPerm === 'granted') {
-      let pickerResult = await ImagePicker.launchImageLibraryAsync({
-        allowsEditing: true,
-        aspect: [4, 3],
+  const pickImage = async () => {
+    let image = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      quality: 1,
+    });
+    console.log(image);
+
+    if (!image.cancelled) {
+      const imageName = image.uri.replace(/^.*[\\\/]/, '');
+      const fileType = mime.lookup(image.uri);
+      const access = { level: "public", contentType: fileType, };
+      fetch(image.uri).then(response => {
+        response.blob()
+            .then(blob => {
+              Storage.put(imageName, blob, access)
+                  .then(succ => Storage.get(imageName).then((img) => {
+                    [...pics, img];
+                  }))
+                  .catch(err => console.log(err));
+            });
       });
-      _handleImagePicked(pickerResult);
-    // }
+    }
   };
-// this handles the image upload to S3
-  const _handleImagePicked = async (pickerResult) => {
-    const imageName = pickerResult.uri.replace(/^.*[\\\/]/, '');
-    const fileType = mime.lookup(pickerResult.uri);
-    const access = { level: "public", contentType: 'image/jpeg' };
-    const imageData = await fetch(pickerResult.uri)
-    const blobData = await imageData.blob()
-
-    try {
-      await Storage.put(imageName, blobData, access)
-    } catch (err) {
-      console.log('error: ', err)
-    }
-  }
-
-  const createPet = async () => {
-    if (name === '' || description === '') return
-    const newPet = { name, description };
-    setPets([...pets, newPet]);
-    setName('');
-    setDescription('');
-    try {
-      await API.graphql(graphqlOperation(createPet, newPet))
-      console.log('pet successfully created.')
-    } catch (err) {
-      console.log('error creating pet...', err)
-    }
-  }
 
   return (
     <View>
       <View style={styles.getStartedContainer}>
-      <TextInput
-          style={styles.input}
-          onChangeText={val => setName(val)}
-          placeholder="Pet Name"
-          value={name}
-      />
-      <TextInput
-          style={styles.input}
-          onChangeText={val => setDescription(val)}
-          placeholder="Pet Description"
-          value={description}
-      />
-      <Button onPress={createPet} title="Add Pet"/>
-      {
-        pets.map((pet, index) => (
-            <View key={index} style={styles.item}>
-              <Text style={styles.name}>{pet.name}</Text>
-              <Text style={styles.description}>{pet.description}</Text>
-            </View>
-        ))
-      }
-      <Button onPress={_pickImage} title="Upload"/>
+        <View style={styles.getImageContainer}>
+          {pics.map((file, index) => (
+              <Image style={styles.getImage} key={index} source={{ uri: file }} style={{ width: 150, height: 150 }} />
+          ))}
+      </View>
+      <Button onPress={pickImage} title="Upload Images"/>
       </View>
     </View>
   );
 }
 
-function handleHelpPress() {
-  WebBrowser.openBrowserAsync(
-    'https://www.facebook.com/'
-  );
-}
-
 const styles = StyleSheet.create({
-  input: {
-    height: 45, borderBottomWidth: 2, borderBottomColor: 'black', marginVertical: 10, width: 200
-  },
-  button: {
-      width: 200
-  },
-  item: {
-    borderBottomWidth: 1, borderBottomColor: '#ddd', paddingVertical: 10
-  },
-  name: { fontSize: 16 },
-  description: { color: 'rgba(0, 0, 0, .5)' },
-  container: {
+  getImageContainer: {
     flex: 1,
-    backgroundColor: '#fff',
-    paddingHorizontal: 10,
-    paddingTop: 50
+    padding: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#fff'
+  },
+  getImage: {
+    display: 'flex',
+    flex: 0.5
   },
   getStartedContainer: {
-    alignItems: 'center',
     marginHorizontal: 50,
   }
 });

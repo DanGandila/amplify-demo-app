@@ -11,7 +11,12 @@ import Amplify from '@aws-amplify/core';
 import { Auth } from '@aws-amplify/auth';
 import config from './aws-exports';
 
-Amplify.configure(config)
+Amplify.configure({
+  ...config,
+  Analytics: {
+    disabled: true,
+  }
+});
 Auth.configure(config)
 
 function App() {
