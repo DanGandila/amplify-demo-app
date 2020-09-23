@@ -21,7 +21,8 @@ Auth.configure(config)
 
 function App() {
   const isLoadingComplete = useCachedResources();
-  const colorScheme = useColorScheme();
+  // const colorScheme = useColorScheme();
+  const colorScheme = 'dark';
 
   if (!isLoadingComplete) {
     return null;

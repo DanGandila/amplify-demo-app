@@ -71,14 +71,9 @@ export default function EditingScreenInfo({ path }: { path: string }) {
 
 const styles = StyleSheet.create({
   getImageContainer: {
-    flex: 1,
-    padding: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#fff'
+    width: 400
   },
   getImage: {
-    display: 'flex',
     flex: 0.5
   },
   getStartedContainer: {
